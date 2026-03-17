@@ -77,7 +77,9 @@ function normalizeTTSText(text, language = 'hinglish') {
         // ── Brand and appliance words → Devanagari ───────────────
         // ElevenLabs Hindi TTS (language_code='hi') reads Roman brand names with English
         // phonemes, causing wrong accent. Devanagari versions are pronounced correctly.
-        [/\bGodrej\b/gi,      'गोदरेज'],
+        // ElevenLabs occasionally uses hard 'D' (ड) for 'Godrej' even when written as 'गोदरेज'.
+        // Replacing with 'Go-the-rej' ensures a soft 'the' / 'द' sound across engines.
+        [/\bGodrej\b/gi,      'Go-the-rej'],
         [/\bRefrigerator\b/gi, 'रेफ्रिजरेटर'],
         [/\bMicrowave\b/gi,    'माइक्रोवेव'],
         [/\bWashing Machine\b/gi, 'वॉशिंग मशीन'],

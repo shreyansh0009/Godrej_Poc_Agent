@@ -97,13 +97,14 @@ function buildAgentConfig(variables, campaignConfig = {}) {
         similarity_boost: 0.55,
         style: 0.08,        // lower style reduces synthesis overhead and variation
         speed: 0.96,        // slightly slower than default, but faster than the prior tuned profile
+        optimize_streaming_latency: 3, // Prioritize latency heavily in chunk generation
     };
 
     const synthesizer = {
         provider: 'elevenlabs',
         provider_config: synthProviderConfig,
         stream: true,
-        buffer_size: 120,   // smaller buffer lowers time to first audio chunk
+        buffer_size: 65,   // Extremely small buffer to force immediate playback of generated audio chunks
         audio_format: 'wav',
     };
 
@@ -147,8 +148,8 @@ function buildAgentConfig(variables, campaignConfig = {}) {
                     },
                     task_config: {
                         hangup_after_silence: 10,
-                        // Lower chunk handoff delay improves response latency
-                        incremental_delay: 90,
+                        // Lower chunk handoff delay improves response latency for the newly small chunks
+                        incremental_delay: 65,
                         optimize_latency: true,
                         // 1 word to interrupt — agent stops as soon as user starts speaking
                         number_of_words_for_interruption: 1,
@@ -161,11 +162,10 @@ function buildAgentConfig(variables, campaignConfig = {}) {
                         voicemail: true,
                         // Disable backchanneling for lower perceived response latency
                         backchanneling: false,
-                        backchanneling_message_gap: 3,
-                        backchanneling_start_delay: 2,
+                        // backchanneling_message_gap: 3,
+                        // backchanneling_start_delay: 2,
                         // Disable ambient noise to reduce synthesis complexity
                         ambient_noise: false,
-                        ambient_noise_track: 'call-center',
                     },
                     toolchain: {
                         execution: 'sequential',
@@ -245,12 +245,13 @@ ${buildLanguageSections(vars.preferred_language)}
     - Insert natural comma pauses between chunks
     - Slow down slightly the FIRST time you say the value and every time you repeat it
     - Never say a number or alphanumeric code in a rushed sentence like a normal phrase
-18. If you already asked "Am I speaking with ${vars.customer_name}?" and the user confirms that they are the same person, treat the name as confirmed.
-    - Do NOT ask the customer to confirm the same name again unless the audio was unclear or the user corrected you.
-    - After identity is established, move to the next verification item instead of repeating the name check.
-19. This workflow is outbound by default.
-    - If customer_type is already known from record as "${vars.customer_type}", do NOT ask "Are you a customer or dealer?" again.
-    - Only ask customer/dealer classification if the record is missing, unclear, or if this becomes an inbound support flow in future.
+18. SYSTEM AUTO-GREETING: The phone system automatically says "May I please speak with ${vars.customer_name}?" before you even connect.
+    - Therefore, the customer's identity is ALREADY 100% CONFIRMED. 
+    - NEVER say "Am I speaking with ${vars.customer_name}?" or "Did I hear your name correctly as ${vars.customer_name}?".
+    - Move straight to helping them or confirming their phone number/issue.
+19. Customer vs Dealer Identification:
+    - If customer_type is already provided as "${vars.customer_type}" (and is "customer" or "dealer"), DO NOT ask "Are you a customer or dealer?".
+    - ONLY ask if they are a customer or a dealer if the record is missing, "not available", or if this is an inbound call where their identity isn't pre-verified.
 
 ## KNOWN CONTEXT
 - Customer type: ${vars.customer_type}
