@@ -56,12 +56,12 @@ function buildAgentConfig(variables, campaignConfig = {}) {
         agent_type: 'simple_llm_agent',
         agent_flow_type: 'streaming',
         // gpt-4o-mini: fastest first-token for voice (~200-400ms)
+        // Raise max_tokens to prevent the agent's replies from getting cut off mid-sentence
         llm_config: {
             provider: 'openai',
             family: 'openai',
             model: 'gpt-4o-mini',
-            // Lower max_tokens reduces long generations and improves first-audio latency
-            max_tokens: 60,
+            max_tokens: 250,
             temperature: 0.25,
             top_p: 0.8,
         },
@@ -97,14 +97,14 @@ function buildAgentConfig(variables, campaignConfig = {}) {
         similarity_boost: 0.55,
         style: 0.08,        // lower style reduces synthesis overhead and variation
         speed: 0.96,        // slightly slower than default, but faster than the prior tuned profile
-        optimize_streaming_latency: 3, // Prioritize latency heavily in chunk generation
+        optimize_streaming_latency: 2, // Balanced chunk generation for latency vs. cadence
     };
 
     const synthesizer = {
         provider: 'elevenlabs',
         provider_config: synthProviderConfig,
         stream: true,
-        buffer_size: 65,   // Extremely small buffer to force immediate playback of generated audio chunks
+        buffer_size: 120,   // Balanced buffer length to ensure sentences have enough context to not sound robotic
         audio_format: 'wav',
     };
 
@@ -151,8 +151,8 @@ function buildAgentConfig(variables, campaignConfig = {}) {
                         // Lower chunk handoff delay improves response latency for the newly small chunks
                         incremental_delay: 65,
                         optimize_latency: true,
-                        // 1 word to interrupt — agent stops as soon as user starts speaking
-                        number_of_words_for_interruption: 1,
+                        // 3 words to interrupt — stops the agent from getting cut off by simple static/heavy breaths
+                        number_of_words_for_interruption: 3,
                         // 2400 seconds max call duration
                         call_terminate: 2400,
                         hangup_after_LLMCall: false,
@@ -160,10 +160,8 @@ function buildAgentConfig(variables, campaignConfig = {}) {
                         call_cancellation_prompt: 'Your comfort is our priority',
                         // Voicemail detection — auto-disconnect if voicemail picks up
                         voicemail: true,
-                        // Disable backchanneling for lower perceived response latency
-                        backchanneling: false,
-                        // backchanneling_message_gap: 3,
-                        // backchanneling_start_delay: 2,
+                        // Enable backchanneling to mask initial high latency with filler words
+                        backchanneling: true,
                         // Disable ambient noise to reduce synthesis complexity
                         ambient_noise: false,
                     },

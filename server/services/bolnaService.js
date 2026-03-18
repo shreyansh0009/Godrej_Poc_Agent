@@ -103,7 +103,7 @@ async function getAgent(agentId) {
 
 async function updateAgent(agentId, agentConfig) {
     try {
-        const response = await bolnaApi.put(`/agent/${agentId}`, agentConfig);
+        const response = await bolnaApi.put(`/v2/agent/${agentId}`, agentConfig);
         return { success: true, data: response.data };
     } catch (error) {
         logger.error('[BolnaService] Update agent error', { error: error.response?.data || error.message });

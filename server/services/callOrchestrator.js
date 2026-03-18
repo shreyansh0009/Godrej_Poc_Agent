@@ -283,7 +283,9 @@ async function initiateCall(campaignId, contact) {
                     // Update the existing agent with the specific customer parameters for this call
                     const updateResult = await bolnaService.updateAgent(agentId, agentConfig);
                     if (!updateResult.success) {
-                        logger.warn(`Failed to update existing agent ${agentId}, proceeding anyway.`, { error: updateResult.error });
+                        logger.warn(`Failed to update existing agent ${agentId}, creating a new one as fallback.`, { error: updateResult.error });
+                        // Set agentId to null so the logic below creates a fresh agent
+                        agentId = null;
                     }
                 }
             }
