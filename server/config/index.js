@@ -9,6 +9,7 @@ const config = {
         apiKey: process.env.BOLNA_API_KEY || '',
         baseUrl: process.env.BOLNA_BASE_URL || 'https://api.bolna.ai',
         phoneNumber: process.env.BOLNA_PHONE_NUMBER || '',
+        agentName: process.env.BOLNA_AGENT_NAME || '',
     },
 
     // Webhook

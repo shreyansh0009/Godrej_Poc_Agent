@@ -40,7 +40,7 @@ function injectVariables(template, variables) {
  */
 function buildAgentConfig(variables, campaignConfig = {}) {
     const language = variables.preferred_language || config.defaults.language;
-    const agentName = `GodrejSupport_${variables.customer_name}_${Date.now()}`;
+    const agentName = config.bolna.agentName || `GodrejSupport_${variables.customer_name}_${Date.now()}`;
 
     // Build the unified agent prompt that encompasses all squad roles
     const unifiedPrompt = buildUnifiedPrompt(variables);

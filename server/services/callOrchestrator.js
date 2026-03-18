@@ -268,13 +268,36 @@ async function initiateCall(campaignId, contact) {
     });
 
     try {
-        // Step 1: Create Bolna agent (circuit-broken in bolnaService)
-        const agentResult = await bolnaService.createAgent(agentConfig);
-        if (!agentResult.success) {
-            throw new Error(`Agent creation failed: ${JSON.stringify(agentResult.error)}`);
+        let agentId = null;
+
+        if (config.bolna.agentName) {
+            // First check if we already resolve it in memory (we can just use Bolna's listAgents)
+            // To avoid huge latency per call, ideally we'd cache the ID, but listing is safest to ensure it exists.
+            const agentsRes = await bolnaService.listAgents();
+            if (agentsRes.success && agentsRes.data) {
+                const existing = agentsRes.data.find(a => a.agent_name === config.bolna.agentName);
+                if (existing) {
+                    agentId = existing.id || existing.agent_id;
+                    logger.info('[Orchestrator] Found existing agent by name, updating config', { agentName: config.bolna.agentName, agentId });
+                    
+                    // Update the existing agent with the specific customer parameters for this call
+                    const updateResult = await bolnaService.updateAgent(agentId, agentConfig);
+                    if (!updateResult.success) {
+                        logger.warn(`Failed to update existing agent ${agentId}, proceeding anyway.`, { error: updateResult.error });
+                    }
+                }
+            }
         }
 
-        const agentId = agentResult.data.agent_id || agentResult.data.id;
+        if (!agentId) {
+            // Step 1: Create Bolna agent (circuit-broken in bolnaService) if it doesn't exist or no fixed name
+            logger.info('[Orchestrator] Creating new Bolna agent', { agentName: config.bolna.agentName || 'dynamic' });
+            const agentResult = await bolnaService.createAgent(agentConfig);
+            if (!agentResult.success) {
+                throw new Error(`Agent creation failed: ${JSON.stringify(agentResult.error)}`);
+            }
+            agentId = agentResult.data.agent_id || agentResult.data.id;
+        }
 
         // Step 2: Dial (circuit-broken in bolnaService)
         // +918035316594 is a Plivo number registered in Bolna — pass it as from_phone_number
